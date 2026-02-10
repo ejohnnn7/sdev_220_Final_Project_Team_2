@@ -43,14 +43,15 @@ def add_book_to_db(book_obj):
         conn.close()
 
 
-# --- Execution Examples ---
-initialize_book_db()
+if __name__ == "__main__":
+    # --- Execution Examples ---
+    initialize_book_db()
 
-# Create a new book instance
-my_book = Book(101, "The Odyssey", "Homer")
+    # Create a new book instance
+    my_book = Book(101, "The Odyssey", "Homer")
 
-# Save it
-add_book_to_db(my_book)
+    # Save it
+    add_book_to_db(my_book)
 
 
 # The above will be used in adding a new book, it just needs a GUI to access it cleanly. 

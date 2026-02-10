@@ -1,4 +1,5 @@
 import sqlite3
+
 class Member:
     def __init__(self, member_id, first_name, last_name, fines_due):
         self.member_id = member_id
@@ -41,14 +42,16 @@ def add_member_to_db(member_obj):
     finally:
         conn.close()
 
-# --- Execution Examples ---
-initialize_member_db()
 
-# Create a new member instance
-new_member = Member(1001, "Andrew", "Catlin", 0)
+if __name__ == "__main__":
+    # --- Execution Examples ---
+    initialize_member_db()
 
-# Save it
-add_member_to_db(new_member)
+    # Create a new member instance
+    new_member = Member(1001, "Andrew", "Catlin", 0)
+
+    # Save it
+    add_member_to_db(new_member)
 
 
 # The above will be used in adding a new member, it just needs a GUI to access it cleanly. 
