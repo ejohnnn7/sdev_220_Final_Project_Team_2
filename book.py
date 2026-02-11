@@ -2,11 +2,12 @@ import sqlite3
 
 # Class Book implementation
 class Book:
-    def __init__(self, title, author, is_checked_out=0, book_id=None):
+    def __init__(self, title, author, is_checked_out=0, book_id=None, active=1):
         self.book_id = book_id
         self.title = title
         self.author = author
         self.is_checked_out = is_checked_out
+        self.active = active
 
 # Access the database
 def initialize_book_db():
@@ -19,6 +20,7 @@ def initialize_book_db():
             title TEXT,
             author TEXT,
             is_checked_out INTEGER DEFAULT 0
+            active INTEGER DEFAULT 1
         )
     ''')
     conn.commit()
@@ -61,6 +63,35 @@ def set_book_checkout_status(book_id, is_checked_out):
         cursor.execute('''
             UPDATE books 
             SET is_checked_out = ? 
+            WHERE book_id = ?
+        ''', (status_int, book_id))
+        
+        if cursor.rowcount == 0:
+            print(f"No book found with ID {book_id}")
+        else:
+            conn.commit()
+            print(f"Book {book_id} is now set to: {status_text}")
+            
+    except sqlite3.Error as e:
+        print(f"Error updating status: {e}")
+    finally:
+        conn.close()
+        
+def set_book_active_status(book_id, is_active):
+    """
+    Updates the active status of a book.
+    active: True (1) to activate, False (0) to deactivate
+    """
+    conn = sqlite3.connect('book.db')
+    cursor = conn.cursor()
+    
+    status_int = 1 if is_active else 0
+    status_text = "Active" if is_active else "Inactive"
+
+    try:
+        cursor.execute('''
+            UPDATE books 
+            SET active = ? 
             WHERE book_id = ?
         ''', (status_int, book_id))
         

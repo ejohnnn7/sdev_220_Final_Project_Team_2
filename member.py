@@ -50,7 +50,6 @@ def add_member_to_db(member_obj):
     finally:
         conn.close()
 
-
 def set_member_active_status(member_id, is_active):
     """
     Updates the active status of a member.
