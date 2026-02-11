@@ -9,7 +9,7 @@ class Member:
         self.fines_due = fines_due
         self.active = active
 
-def add_member_to_db(member_obj):
+def add_member(member_obj):
     """Inserts a Member object into the database."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -128,10 +128,10 @@ if __name__ == "__main__":
     initialize_db()
 
     new_member = Member("Andrew", "Catlin", 0)
-    add_member_to_db(new_member)
+    add_member(new_member)
 
     new_member2 = Member("Bob", "Cat", 0)
-    add_member_to_db(new_member2)
+    add_member(new_member2)
 
     set_member_active_status(new_member.member_id, False)
 
