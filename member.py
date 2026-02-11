@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # #4. Search members
     # for m in search_members("Cat"):
     #     print(m.member_id, m.first_name, m.last_name, m.fines_due, m.active)
-    # pass
+    pass
     
 
 
