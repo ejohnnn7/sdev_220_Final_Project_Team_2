@@ -80,21 +80,73 @@ def set_member_active_status(member_id, is_active):
     finally:
         conn.close()
 
+def search_members(query):
+    """
+    Searches for members.
+    - ID search is EXACT.
+    - Name search is PARTIAL.
+    - Active members appear first.
+    """
+    conn = sqlite3.connect('member.db')
+    cursor = conn.cursor()
+    
+    # Prepare the wildcards for name searching
+    name_search = f"%{query}%"
+
+    # Determine if we are searching for an ID or just a Name
+    try:
+        # If the query is a number, use it for the ID search
+        exact_id = int(query)
+    except ValueError:
+        # If query is not a number, set ID to -1 (will never match a real member)
+        exact_id = -1
+
+    try:
+        cursor.execute('''
+        SELECT member_id, first_name, last_name, fines_due, active 
+        FROM members 
+        WHERE member_id = ? OR first_name LIKE ? OR last_name LIKE ?
+        ORDER BY active DESC, last_name ASC
+        ''', (exact_id, name_search, name_search))
+        
+        rows = cursor.fetchall()
+        
+    except sqlite3.Error as e:
+        print(f"Search Error: {e}")
+        return []
+    
+    finally:
+        conn.close()
+
+    # Convert results to Member objects
+    results = []
+    for row in rows:
+        results.append(Member(row[1], row[2], row[3], member_id=row[0], active=row[4]))
+
+    return results
 
 if __name__ == "__main__":
-    # --- Execution Examples ---
-    initialize_member_db()
+    # #--- Execution Examples ---
+    # initialize_member_db()
 
-    #1. Create a new member instance
-    new_member = Member("Andrew", "Catlin", 0)
-    add_member_to_db(new_member)
+    # #1. Create a new member instance
+    # new_member = Member("Andrew", "Catlin", 0)
+    # add_member_to_db(new_member)
+    
+    # new_member = Member("Bob", "Cat", 0)
+    # add_member_to_db(new_member)
 
-    # 2. Deactivate the member (Soft Delete)
-    # The row stays in the DB, but 'active' becomes 0
-    set_member_active_status(new_member.member_id, False)
+    # #2. Deactivate the member (Soft Delete)
+    # #The row stays in the DB, but 'active' becomes 0
+    # set_member_active_status(new_member.member_id, False)
 
-    # 3. Reactivate them later if they return
-    # set_member_active_status(new_member.member_id, True)
+    # #3. Reactivate them later if they return
+    # #set_member_active_status(new_member.member_id, True)
+    
+    # #4. Search members
+    # for m in search_members("Cat"):
+    #     print(m.member_id, m.first_name, m.last_name, m.fines_due, m.active)
+    # pass
     
 
 
