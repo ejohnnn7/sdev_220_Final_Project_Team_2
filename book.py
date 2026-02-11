@@ -19,7 +19,7 @@ def initialize_book_db():
             book_id INTEGER PRIMARY KEY,
             title TEXT,
             author TEXT,
-            is_checked_out INTEGER DEFAULT 0
+            is_checked_out INTEGER DEFAULT 0,
             active INTEGER DEFAULT 1
         )
     ''')
@@ -34,9 +34,9 @@ def add_book_to_db(book_obj):
     
     try:
         cursor.execute('''
-            INSERT INTO books (title, author, is_checked_out)
-            VALUES (?, ?, ?)
-        ''', (book_obj.title, book_obj.author, int(book_obj.is_checked_out)))
+            INSERT INTO books (title, author, is_checked_out, active)
+            VALUES (?, ?, ?, ?)
+        ''', (book_obj.title, book_obj.author, int(book_obj.is_checked_out), int(book_obj.active)))
         
         conn.commit()
         
