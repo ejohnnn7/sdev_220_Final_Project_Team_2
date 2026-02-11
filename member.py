@@ -35,9 +35,9 @@ def add_member_to_db(member_obj):
     
     try:
         cursor.execute('''
-            INSERT INTO members (first_name, last_name, fines_due)
-            VALUES (?, ?, ?)
-        ''', (member_obj.first_name, member_obj.last_name, int(member_obj.fines_due)))
+            INSERT INTO members (first_name, last_name, fines_due, active)
+            VALUES (?, ?, ?, ?)
+        ''', (member_obj.first_name, member_obj.last_name, int(member_obj.fines_due), int(member_obj.active)))
         
         conn.commit()
         
@@ -46,7 +46,7 @@ def add_member_to_db(member_obj):
         
         print(f"Added: {member_obj.first_name}")
     except sqlite3.IntegrityError:
-        print(f"Error: Book ID {member_obj.member_id} already exists.")
+        print(f"Error: Member ID {member_obj.member_id} already exists.")
     finally:
         conn.close()
 
