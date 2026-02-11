@@ -10,7 +10,7 @@ class Book:
         self.is_checked_out = is_checked_out
         self.active = active
 
-def add_book_to_db(book_obj):
+def add_book(book_obj):
     """Inserts a Book object into the database."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     initialize_db()
 
     my_book = Book("The Odyssey", "Homer")
-    add_book_to_db(my_book)
+    add_book(my_book)
     set_book_checkout_status(my_book.book_id, True)
 
     results = search_books("Odyssey")
