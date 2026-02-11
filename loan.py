@@ -107,7 +107,17 @@ def search_loans_by_member(member_id, open_only=False):
     finally:
         conn.close()
 
-    return [_row_to_loan(row) for row in rows]
+    return [
+        Loan(
+            loan_id=row[0],
+            book_id=row[1],
+            member_id=row[2],
+            checkout_date=date.fromisoformat(row[3]),
+            due_date=date.fromisoformat(row[4]),
+            return_date=date.fromisoformat(row[5]) if row[5] else None
+        )
+        for row in rows
+    ]
 
 
 def search_loans_by_book(book_id, open_only=False):
@@ -137,7 +147,17 @@ def search_loans_by_book(book_id, open_only=False):
     finally:
         conn.close()
 
-    return [_row_to_loan(row) for row in rows]
+    return [
+        Loan(
+            loan_id=row[0],
+            book_id=row[1],
+            member_id=row[2],
+            checkout_date=date.fromisoformat(row[3]),
+            due_date=date.fromisoformat(row[4]),
+            return_date=date.fromisoformat(row[5]) if row[5] else None
+        )
+        for row in rows
+    ]
 
 
 def get_overdue_loans(today):
