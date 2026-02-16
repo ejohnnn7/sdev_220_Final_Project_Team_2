@@ -192,6 +192,29 @@ def add_member():
     member_name_entry.delete(0, tk.END)
 
 
+def remove_member():
+    selected = member_listbox.curselection()
+    if not selected:
+        return
+
+    if not messagebox.askyesno("Confirm", "Remove this member?"):
+        return
+
+    selected_text = member_listbox.get(selected[0])
+    member_id = selected_text.split(" - ")[0]
+
+    if member_id in members:
+        del members[member_id]
+
+    member_listbox.delete(selected)
+
+    messagebox.showinfo("Success", "Member removed successfully")
+
+
+tk.Button(members_tab, text="Add Member", command=add_member).grid(row=3, column=0, pady=5)
+tk.Button(members_tab, text="Remove Member", command=remove_member).grid(row=3, column=1, pady=5)
+
+
 # LOANS TAB
 tk.Label(loans_tab, text="Book ID").grid(row=0, column=0, padx=5, pady=5)
 tk.Label(loans_tab, text="Member ID").grid(row=1, column=0, padx=5, pady=5)
@@ -230,7 +253,22 @@ def add_loan():
     loan_member_entry.delete(0, tk.END)
 
 
+def remove_loan():
+    selected = loan_listbox.curselection()
+    if not selected:
+        return
+
+    if not messagebox.askyesno("Confirm", "Remove this loan?"):
+        return
+
+    loans.pop(selected[0])
+    loan_listbox.delete(selected)
+
+    messagebox.showinfo("Success", "Loan removed successfully")
+
+
 tk.Button(loans_tab, text="Add Loan", command=add_loan).grid(row=3, column=0, pady=5)
+tk.Button(loans_tab, text="Remove Loan", command=remove_loan).grid(row=3, column=1, pady=5)
 
 
 load_books_from_db()
