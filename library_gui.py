@@ -96,6 +96,9 @@ def add_book():
         messagebox.showerror("Error", "All fields required")
         return
 
+    if not messagebox.askyesno("Confirm", "Add this book?"):
+        return
+
     try:
         book_num = int(book_id)
     except ValueError:
@@ -115,10 +118,13 @@ def add_book():
         conn.commit()
     except sqlite3.IntegrityError:
         messagebox.showerror("Error", "Book ID already exists")
+        return
     finally:
         conn.close()
 
     load_books_from_db()
+
+    messagebox.showinfo("Success", "Book added successfully")
 
     book_id_entry.delete(0, tk.END)
     title_entry.delete(0, tk.END)
@@ -170,14 +176,20 @@ def add_member():
     member_id = member_id_entry.get()
     name = member_name_entry.get()
 
+    if not member_id or not name:
+        messagebox.showerror("Error", "All fields required")
+        return
+
+    if not messagebox.askyesno("Confirm", "Add this member?"):
+        return
+
     members[member_id] = Member(member_id, name)
     member_listbox.insert(tk.END, f"{member_id} - {name}")
 
+    messagebox.showinfo("Success", "Member added successfully")
+
     member_id_entry.delete(0, tk.END)
     member_name_entry.delete(0, tk.END)
-
-
-tk.Button(members_tab, text="Add Member", command=add_member).grid(row=3, column=0, pady=5)
 
 
 # LOANS TAB
@@ -198,12 +210,21 @@ def add_loan():
     book_id = loan_book_entry.get()
     member_id = loan_member_entry.get()
 
+    if not book_id or not member_id:
+        messagebox.showerror("Error", "All fields required")
+        return
+
     if book_id not in books or member_id not in members:
         messagebox.showerror("Error", "Invalid book or member")
         return
 
+    if not messagebox.askyesno("Confirm", "Create this loan?"):
+        return
+
     loans.append(Loan(book_id, member_id))
     loan_listbox.insert(tk.END, f"Book {book_id} loaned to Member {member_id}")
+
+    messagebox.showinfo("Success", "Loan added successfully")
 
     loan_book_entry.delete(0, tk.END)
     loan_member_entry.delete(0, tk.END)
