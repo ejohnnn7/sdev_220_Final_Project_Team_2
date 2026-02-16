@@ -2,7 +2,21 @@ from database import get_connection
 from datetime import date, timedelta
 import sqlite3
 
+# Project rules
+LOAN_PERIOD_DAYS = 14
+FINE_PER_DAY = 0.25
+
+
 class Loan:
+    """
+    Represents a single loan transaction:
+    - which book was checked out
+    - which member checked it out
+    - when it was checked out
+    - when it is due
+    - when it was returned (None if still checked out)
+    """
+
     def __init__(self, book_id, member_id, checkout_date, due_date, return_date=None, loan_id=None):
         self.loan_id = loan_id
         self.book_id = book_id
@@ -21,13 +35,23 @@ class Loan:
             return 0
         return (today - self.due_date).days
 
+    def fine_amount(self, today, fine_per_day=FINE_PER_DAY):
+        """
+        Returns the fine amount for this loan.
+        Fine only applies if overdue. If not overdue, this returns 0.00.
+        """
+        return round(self.days_overdue(today) * fine_per_day, 2)
+
     def close_loan(self, return_date):
         """Marks the loan as returned."""
         self.return_date = return_date
 
 
 def add_loan(loan_obj):
-    """Inserts a Loan object into the database."""
+    """
+    Inserts a Loan object into the database.
+    Dates are stored as ISO strings (YYYY-MM-DD) using .isoformat().
+    """
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -107,6 +131,7 @@ def search_loans_by_member(member_id, open_only=False):
     finally:
         conn.close()
 
+    # Convert ISO date strings back into datetime.date objects
     return [
         Loan(
             loan_id=row[0],
@@ -147,6 +172,7 @@ def search_loans_by_book(book_id, open_only=False):
     finally:
         conn.close()
 
+    # Convert ISO date strings back into datetime.date objects
     return [
         Loan(
             loan_id=row[0],
@@ -184,6 +210,7 @@ def get_overdue_loans(today):
     finally:
         conn.close()
 
+    # Convert ISO date strings back into datetime.date objects
     return [
         Loan(
             loan_id=row[0],
@@ -198,20 +225,23 @@ def get_overdue_loans(today):
 
 
 if __name__ == "__main__":
+    # Basic testing for this module (optional)
     from database import initialize_db
 
     initialize_db()
 
+    # Create a loan due in 14 days
     checkout_date = date.today()
-    due_date = checkout_date + timedelta(days=14)
+    due_date = checkout_date + timedelta(days=LOAN_PERIOD_DAYS)
 
     loan = Loan(book_id=1, member_id=1, checkout_date=checkout_date, due_date=due_date)
     add_loan(loan)
 
-    # Test overdue logic
+    # Test overdue and fine logic (simulate returning 3 days late)
     test_date = due_date + timedelta(days=3)
     print("Is overdue:", loan.is_overdue(test_date))
     print("Days overdue:", loan.days_overdue(test_date))
+    print("Fine:", loan.fine_amount(test_date))
 
-    # Return the loan
+    # Record the return in the database
     return_loan(loan.loan_id, test_date)

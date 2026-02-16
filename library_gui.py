@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
+from datetime import date, timedelta
 
 #  CLASSES
 class Book:
@@ -31,6 +32,11 @@ loans = []
 #  GUI
 def get_connection():
     return sqlite3.connect("library.db")
+
+
+LOAN_PERIOD_DAYS = 14
+FINE_PER_DAY = 0.25
+MAX_BOOKS_PER_MEMBER = 3
 
 
 root = tk.Tk()
@@ -143,6 +149,18 @@ def remove_book():
     cur = conn.cursor()
 
     cur.execute("""
+        SELECT is_checked_out
+        FROM books
+        WHERE book_code = ? OR book_id = ?;
+    """, (book_identifier, book_identifier))
+    row = cur.fetchone()
+
+    if row and row[0] == 1:
+        conn.close()
+        messagebox.showerror("Error", "Book is checked out. Return it first.")
+        return
+
+    cur.execute("""
         UPDATE books
         SET active = 0
         WHERE book_code = ? OR book_id = ?;
@@ -172,9 +190,31 @@ member_listbox = tk.Listbox(members_tab, width=50)
 member_listbox.grid(row=4, column=0, columnspan=3, pady=10)
 
 
+def load_members_from_db():
+    member_listbox.delete(0, tk.END)
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT member_id, member_code, first_name, last_name
+        FROM members
+        WHERE active = 1
+        ORDER BY member_id;
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    for member_id, member_code, first_name, last_name in rows:
+        display_id = member_code if member_code else str(member_id)
+        full_name = f"{first_name} {last_name}".strip()
+        member_listbox.insert(tk.END, f"{display_id} - {full_name}")
+
+
 def add_member():
-    member_id = member_id_entry.get()
-    name = member_name_entry.get()
+    member_id = member_id_entry.get().strip()
+    name = member_name_entry.get().strip()
 
     if not member_id or not name:
         messagebox.showerror("Error", "All fields required")
@@ -183,8 +223,41 @@ def add_member():
     if not messagebox.askyesno("Confirm", "Add this member?"):
         return
 
-    members[member_id] = Member(member_id, name)
-    member_listbox.insert(tk.END, f"{member_id} - {name}")
+    try:
+        member_num = int(member_id)
+    except ValueError:
+        messagebox.showerror("Error", "Member ID must be a number")
+        return
+
+    member_code = f"M{member_num:03d}"
+
+    parts = name.split()
+    first_name = parts[0]
+    last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # prevent duplicate member_code
+    cur.execute("SELECT COUNT(*) FROM members WHERE member_code = ?;", (member_code,))
+    if cur.fetchone()[0] > 0:
+        conn.close()
+        messagebox.showerror("Error", "Member ID already exists")
+        return
+
+    try:
+        cur.execute("""
+            INSERT INTO members (member_code, first_name, last_name, fines_due, active)
+            VALUES (?, ?, ?, 0, 1);
+        """, (member_code, first_name, last_name))
+        conn.commit()
+    except sqlite3.Error as e:
+        messagebox.showerror("Error", f"Could not add member: {e}")
+        return
+    finally:
+        conn.close()
+
+    load_members_from_db()
 
     messagebox.showinfo("Success", "Member added successfully")
 
@@ -201,12 +274,47 @@ def remove_member():
         return
 
     selected_text = member_listbox.get(selected[0])
-    member_id = selected_text.split(" - ")[0]
+    member_identifier = selected_text.split(" - ")[0]
 
-    if member_id in members:
-        del members[member_id]
+    conn = get_connection()
+    cur = conn.cursor()
 
-    member_listbox.delete(selected)
+    cur.execute("""
+        SELECT member_id
+        FROM members
+        WHERE member_code = ? OR member_id = ?;
+    """, (member_identifier, member_identifier))
+    row = cur.fetchone()
+
+    if not row:
+        conn.close()
+        messagebox.showerror("Error", "Member not found")
+        return
+
+    member_id = row[0]
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM loans
+        WHERE member_id = ? AND return_date IS NULL;
+    """, (member_id,))
+    open_count = cur.fetchone()[0]
+
+    if open_count > 0:
+        conn.close()
+        messagebox.showerror("Error", "Member has open loans. Return books first.")
+        return
+
+    cur.execute("""
+        UPDATE members
+        SET active = 0
+        WHERE member_id = ?;
+    """, (member_id,))
+
+    conn.commit()
+    conn.close()
+
+    load_members_from_db()
 
     messagebox.showinfo("Success", "Member removed successfully")
 
@@ -225,27 +333,127 @@ loan_member_entry = tk.Entry(loans_tab)
 loan_book_entry.grid(row=0, column=1)
 loan_member_entry.grid(row=1, column=1)
 
-loan_listbox = tk.Listbox(loans_tab, width=50)
+loan_listbox = tk.Listbox(loans_tab, width=60)
 loan_listbox.grid(row=4, column=0, columnspan=3, pady=10)
 
 
+def load_open_loans_from_db():
+    loan_listbox.delete(0, tk.END)
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT l.loan_id, b.book_code, m.member_code, l.due_date
+        FROM loans l
+        JOIN books b ON b.book_id = l.book_id
+        JOIN members m ON m.member_id = l.member_id
+        WHERE l.return_date IS NULL
+        ORDER BY l.due_date ASC;
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    for loan_id, book_code, member_code, due_date in rows:
+        loan_listbox.insert(tk.END, f"{loan_id} - {book_code} -> {member_code} (Due: {due_date})")
+
+
 def add_loan():
-    book_id = loan_book_entry.get()
-    member_id = loan_member_entry.get()
+    book_id_text = loan_book_entry.get()
+    member_id_text = loan_member_entry.get()
 
-    if not book_id or not member_id:
+    if not book_id_text or not member_id_text:
         messagebox.showerror("Error", "All fields required")
-        return
-
-    if book_id not in books or member_id not in members:
-        messagebox.showerror("Error", "Invalid book or member")
         return
 
     if not messagebox.askyesno("Confirm", "Create this loan?"):
         return
 
-    loans.append(Loan(book_id, member_id))
-    loan_listbox.insert(tk.END, f"Book {book_id} loaned to Member {member_id}")
+    try:
+        book_id = int(book_id_text)
+        member_id = int(member_id_text)
+    except ValueError:
+        messagebox.showerror("Error", "Book ID and Member ID must be a number")
+        return
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT is_checked_out, active
+        FROM books
+        WHERE book_id = ?;
+    """, (book_id,))
+    book_row = cur.fetchone()
+
+    if not book_row:
+        conn.close()
+        messagebox.showerror("Error", "Invalid book")
+        return
+
+    if book_row[1] != 1:
+        conn.close()
+        messagebox.showerror("Error", "Book is not active")
+        return
+
+    if book_row[0] == 1:
+        conn.close()
+        messagebox.showerror("Error", "Book is already checked out")
+        return
+
+    cur.execute("""
+        SELECT active
+        FROM members
+        WHERE member_id = ?;
+    """, (member_id,))
+    member_row = cur.fetchone()
+
+    if not member_row:
+        conn.close()
+        messagebox.showerror("Error", "Invalid member")
+        return
+
+    if member_row[0] != 1:
+        conn.close()
+        messagebox.showerror("Error", "Member is not active")
+        return
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM loans
+        WHERE member_id = ? AND return_date IS NULL;
+    """, (member_id,))
+    open_loans_count = cur.fetchone()[0]
+
+    if open_loans_count >= MAX_BOOKS_PER_MEMBER:
+        conn.close()
+        messagebox.showerror("Error", f"Member already has {MAX_BOOKS_PER_MEMBER} books checked out")
+        return
+
+    checkout_date = date.today()
+    due_date = checkout_date + timedelta(days=LOAN_PERIOD_DAYS)
+
+    try:
+        cur.execute("""
+            INSERT INTO loans (book_id, member_id, checkout_date, due_date, return_date)
+            VALUES (?, ?, ?, ?, NULL);
+        """, (book_id, member_id, checkout_date.isoformat(), due_date.isoformat()))
+
+        cur.execute("""
+            UPDATE books
+            SET is_checked_out = 1
+            WHERE book_id = ?;
+        """, (book_id,))
+
+        conn.commit()
+    except sqlite3.Error as e:
+        messagebox.showerror("Error", f"Could not create loan: {e}")
+    finally:
+        conn.close()
+
+    load_open_loans_from_db()
+    load_books_from_db()
 
     messagebox.showinfo("Success", "Loan added successfully")
 
@@ -258,13 +466,80 @@ def remove_loan():
     if not selected:
         return
 
-    if not messagebox.askyesno("Confirm", "Remove this loan?"):
+    if not messagebox.askyesno("Confirm", "Return this loan?"):
         return
 
-    loans.pop(selected[0])
-    loan_listbox.delete(selected)
+    selected_text = loan_listbox.get(selected[0])
+    loan_id_text = selected_text.split(" - ")[0]
 
-    messagebox.showinfo("Success", "Loan removed successfully")
+    try:
+        loan_id = int(loan_id_text)
+    except ValueError:
+        messagebox.showerror("Error", "Could not read selected loan")
+        return
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT book_id, member_id, due_date
+        FROM loans
+        WHERE loan_id = ? AND return_date IS NULL;
+    """, (loan_id,))
+    row = cur.fetchone()
+
+    if not row:
+        conn.close()
+        messagebox.showerror("Error", "Loan not found (or already returned)")
+        return
+
+    book_id = row[0]
+    member_id = row[1]
+    due_date_str = row[2]
+    due_dt = date.fromisoformat(due_date_str)
+
+    return_dt = date.today()
+    days_overdue = (return_dt - due_dt).days
+    if days_overdue < 0:
+        days_overdue = 0
+    fine = round(days_overdue * FINE_PER_DAY, 2)
+
+    try:
+        cur.execute("""
+            UPDATE loans
+            SET return_date = ?
+            WHERE loan_id = ? AND return_date IS NULL;
+        """, (return_dt.isoformat(), loan_id))
+
+        cur.execute("""
+            UPDATE books
+            SET is_checked_out = 0
+            WHERE book_id = ?;
+        """, (book_id,))
+
+        # add fine to member fines_due if overdue
+        if fine > 0:
+            cur.execute("""
+                UPDATE members
+                SET fines_due = fines_due + ?
+                WHERE member_id = ?;
+            """, (fine, member_id))
+
+        conn.commit()
+    except sqlite3.Error as e:
+        messagebox.showerror("Error", f"Could not return loan: {e}")
+        conn.close()
+        return
+
+    conn.close()
+
+    load_open_loans_from_db()
+    load_books_from_db()
+
+    if fine > 0:
+        messagebox.showinfo("Returned", f"Returned successfully.\nDays overdue: {days_overdue}\nFine: ${fine}")
+    else:
+        messagebox.showinfo("Returned", "Returned successfully.\nFine: $0.00")
 
 
 tk.Button(loans_tab, text="Add Loan", command=add_loan).grid(row=3, column=0, pady=5)
@@ -272,5 +547,7 @@ tk.Button(loans_tab, text="Remove Loan", command=remove_loan).grid(row=3, column
 
 
 load_books_from_db()
+load_members_from_db()
+load_open_loans_from_db()
 
 root.mainloop()
