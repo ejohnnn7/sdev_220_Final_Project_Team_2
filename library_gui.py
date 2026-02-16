@@ -120,6 +120,10 @@ def add_book():
 
     load_books_from_db()
 
+    book_id_entry.delete(0, tk.END)
+    title_entry.delete(0, tk.END)
+    author_entry.delete(0, tk.END)
+
 
 def remove_book():
     selected = book_listbox.curselection()
@@ -169,6 +173,9 @@ def add_member():
     members[member_id] = Member(member_id, name)
     member_listbox.insert(tk.END, f"{member_id} - {name}")
 
+    member_id_entry.delete(0, tk.END)
+    member_name_entry.delete(0, tk.END)
+
 
 tk.Button(members_tab, text="Add Member", command=add_member).grid(row=3, column=0, pady=5)
 
@@ -197,6 +204,9 @@ def add_loan():
 
     loans.append(Loan(book_id, member_id))
     loan_listbox.insert(tk.END, f"Book {book_id} loaned to Member {member_id}")
+
+    loan_book_entry.delete(0, tk.END)
+    loan_member_entry.delete(0, tk.END)
 
 
 tk.Button(loans_tab, text="Add Loan", command=add_loan).grid(row=3, column=0, pady=5)
