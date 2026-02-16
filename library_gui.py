@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import sqlite3
 
 #  CLASSES
 class Book:
@@ -28,6 +29,10 @@ loans = []
 
 
 #  GUI
+def get_connection():
+    return sqlite3.connect("library.db")
+
+
 root = tk.Tk()
 root.title("Library System")
 root.geometry("600x500")
@@ -43,6 +48,7 @@ notebook.add(books_tab, text="Books")
 notebook.add(members_tab, text="Members")
 notebook.add(loans_tab, text="Loans")
 
+
 # BOOKS TAB
 tk.Label(books_tab, text="Book ID").grid(row=0, column=0, padx=5, pady=5)
 tk.Label(books_tab, text="Title").grid(row=1, column=0, padx=5, pady=5)
@@ -56,8 +62,29 @@ book_id_entry.grid(row=0, column=1)
 title_entry.grid(row=1, column=1)
 author_entry.grid(row=2, column=1)
 
-book_listbox = tk.Listbox(books_tab, width=50)
+book_listbox = tk.Listbox(books_tab, width=60)
 book_listbox.grid(row=4, column=0, columnspan=3, pady=10)
+
+
+def load_books_from_db():
+    book_listbox.delete(0, tk.END)
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT book_id, book_code, title, author
+        FROM books
+        WHERE active = 1
+        ORDER BY book_id;
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    for book_id, book_code, title, author in rows:
+        display_id = book_code if book_code else str(book_id)
+        book_listbox.insert(tk.END, f"{display_id} - {title} by {author}")
 
 
 def add_book():
@@ -65,25 +92,53 @@ def add_book():
     title = title_entry.get()
     author = author_entry.get()
 
-    if book_id in books:
-        messagebox.showerror("Error", "Book already exists")
+    if not book_id or not title or not author:
+        messagebox.showerror("Error", "All fields required")
         return
 
-    books[book_id] = Book(book_id, title, author)
-    book_listbox.insert(tk.END, f"{book_id} - {title} by {author}")
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            INSERT INTO books (book_id, title, author, is_checked_out, active)
+            VALUES (?, ?, ?, 0, 1);
+        """, (book_id, title, author))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        messagebox.showerror("Error", "Book ID already exists")
+    finally:
+        conn.close()
+
+    load_books_from_db()
 
 
 def remove_book():
     selected = book_listbox.curselection()
     if not selected:
         return
-    book_id = list(books.keys())[selected[0]]
-    del books[book_id]
-    book_listbox.delete(selected)
+
+    selected_text = book_listbox.get(selected[0])
+    book_identifier = selected_text.split(" - ")[0]
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE books
+        SET active = 0
+        WHERE book_code = ? OR book_id = ?;
+    """, (book_identifier, book_identifier))
+
+    conn.commit()
+    conn.close()
+
+    load_books_from_db()
 
 
 tk.Button(books_tab, text="Add Book", command=add_book).grid(row=3, column=0, pady=5)
 tk.Button(books_tab, text="Remove Book", command=remove_book).grid(row=3, column=1, pady=5)
+
 
 # MEMBERS TAB
 tk.Label(members_tab, text="Member ID").grid(row=0, column=0, padx=5, pady=5)
@@ -108,6 +163,7 @@ def add_member():
 
 
 tk.Button(members_tab, text="Add Member", command=add_member).grid(row=3, column=0, pady=5)
+
 
 # LOANS TAB
 tk.Label(loans_tab, text="Book ID").grid(row=0, column=0, padx=5, pady=5)
@@ -136,5 +192,8 @@ def add_loan():
 
 
 tk.Button(loans_tab, text="Add Loan", command=add_loan).grid(row=3, column=0, pady=5)
+
+
+load_books_from_db()
 
 root.mainloop()
