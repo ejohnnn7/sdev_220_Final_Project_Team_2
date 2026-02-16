@@ -96,14 +96,22 @@ def add_book():
         messagebox.showerror("Error", "All fields required")
         return
 
+    try:
+        book_num = int(book_id)
+    except ValueError:
+        messagebox.showerror("Error", "Book ID must be a number")
+        return
+
+    book_code = f"B{book_num:03d}"
+
     conn = get_connection()
     cur = conn.cursor()
 
     try:
         cur.execute("""
-            INSERT INTO books (book_id, title, author, is_checked_out, active)
-            VALUES (?, ?, ?, 0, 1);
-        """, (book_id, title, author))
+            INSERT INTO books (book_id, book_code, title, author, is_checked_out, active)
+            VALUES (?, ?, ?, ?, 0, 1);
+        """, (book_num, book_code, title, author))
         conn.commit()
     except sqlite3.IntegrityError:
         messagebox.showerror("Error", "Book ID already exists")
