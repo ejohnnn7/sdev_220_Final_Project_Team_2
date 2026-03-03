@@ -1,6 +1,18 @@
 import sqlite3
 
 def get_connection():
+    """Returns a connection to the library database with foreign keys enabled."""
+    conn = sqlite3.connect("library.db")
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+def initialize_db():
+    """
+    Sets up all tables if they don't already exist.
+    """
+    conn = get_connection()
+    
+def get_connection():
     """
     Returns a connection to the library database with foreign keys enabled.
     """

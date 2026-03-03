@@ -1,2 +1,34 @@
-# sdev_220_Final_Project_Team_2
-Final project repository for SDEV220 - Team 2
+# SDEV220 Final Project – Library Management System
+
+## Project Overview
+This project is a simple Library Management System created for SDEV220.
+
+The system allows users to:
+- Add books
+- Add members
+- Check out books
+- Return books
+- Track fines for overdue books
+
+---
+
+## Library Rules
+
+The following rules were agreed upon for this project:
+
+- **Loan Period:** 14 days
+- **Fine:** $0.25 per day overdue
+- **Maximum Books Per Member:** 3 books
+- **Book IDs:** Stored as strings (Example: B001, B002)
+- **Member IDs:** Stored as strings (Example: M001, M002)
+
+---
+
+## System Features
+
+- Add new books to the system
+- Register new members
+- Check out books to members
+- Return books
+- Calculate overdue fines
+- Prevent members from checking out more than 3 books

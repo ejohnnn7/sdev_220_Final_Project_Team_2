@@ -471,7 +471,6 @@ def remove_loan():
     loan_id_text = selected_text.split(" -> ")[0]
 
     try:
-        print(loan_id_text) #***********************************************************
         loan_id = int(loan_id_text)
     except ValueError:
         messagebox.showerror("Error", "Could not read selected loan")
