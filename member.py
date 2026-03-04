@@ -122,6 +122,29 @@ def search_members(query):
     ]
 
 
+def sync_fines():
+    """Recalculate and update fines_due for every member based on open overdue loans."""
+    from datetime import date
+    from loan import FINE_PER_DAY
+    conn = get_connection()
+    cursor = conn.cursor()
+    today = date.today().isoformat()
+    cursor.execute('''
+        UPDATE members
+        SET fines_due = ROUND((
+            SELECT COALESCE(SUM(
+                MAX(0, CAST(JULIANDAY(?) - JULIANDAY(l.due_date) AS INTEGER)) * ?
+            ), 0)
+            FROM loans l
+            WHERE l.member_id = members.member_id
+              AND l.return_date IS NULL
+              AND l.due_date < ?
+        ), 2);
+    ''', (today, FINE_PER_DAY, today))
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
     from database import initialize_db
 
