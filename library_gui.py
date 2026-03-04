@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from database import initialize_db, get_connection
 from book import Book, add_book, set_book_checkout_status, set_book_active_status
-from member import Member, add_member, set_member_active_status
+from member import Member, add_member, set_member_active_status, sync_fines
 from loan import return_loan as db_return_loan, FINE_PER_DAY
 from checkout import checkout_book
 
@@ -12,7 +12,7 @@ from checkout import checkout_book
 #ROOT WINDOW
 root = tk.Tk()
 root.title("Library System")
-root.geometry("900x600")
+root.geometry("1200x600")
 root.resizable(True, True)
 
 notebook = ttk.Notebook(root)
@@ -509,6 +509,7 @@ def _get_selected_member_id():
 
 def load_open_loans_from_db():
     """Refresh the full loans tab (called from other tabs after changes)."""
+    sync_fines()
     _ln_load_members(ln_member_search_var.get())
     mid = _get_selected_member_id()
     _ln_load_books_for_member(mid, ln_book_search_var.get())
@@ -639,18 +640,28 @@ def return_loan_cmd():
     days_overdue = max(0, (return_dt - due_dt).days)
     fine         = round(days_overdue * FINE_PER_DAY, 2)
 
+    # Require fine payment confirmation before allowing the return
+    if fine > 0:
+        confirmed = messagebox.askyesno(
+            "Fine Due",
+            f'"{title}" is {days_overdue} day(s) overdue.\n'
+            f'Fine amount: ${fine:.2f}\n\n'
+            f'Confirm that the fine has been collected before returning?'
+        )
+        if not confirmed:
+            messagebox.showinfo("Cancelled", "Return cancelled. Please collect the fine first.")
+            return
+
     db_return_loan(loan_id, return_dt)
     set_book_checkout_status(book_id, False)
 
+    # Fine was collected in cash — clear the member's balance
     if fine > 0:
-        conn2 = get_connection()
-        cur2  = conn2.cursor()
-        cur2.execute(
-            "UPDATE members SET fines_due = fines_due + ? WHERE member_id = ?;",
-            (fine, member_id)
-        )
-        conn2.commit()
-        conn2.close()
+        conn3 = get_connection()
+        cur3  = conn3.cursor()
+        cur3.execute("UPDATE members SET fines_due = 0 WHERE member_id = ?;", (member_id,))
+        conn3.commit()
+        conn3.close()
 
     load_open_loans_from_db()
     load_books_from_db()
@@ -659,7 +670,7 @@ def return_loan_cmd():
 
     if fine > 0:
         messagebox.showinfo("Returned",
-            f'"{title}" returned.\nDays overdue: {days_overdue}\nFine added: ${fine:.2f}')
+            f'"{title}" returned.\nDays overdue: {days_overdue}\nFine collected: ${fine:.2f}')
     else:
         messagebox.showinfo("Returned", f'"{title}" returned on time. No fine.')
 
