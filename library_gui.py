@@ -9,10 +9,10 @@ from loan import return_loan as db_return_loan, FINE_PER_DAY
 from checkout import checkout_book
 
 
-# ─── ROOT WINDOW ────────────────────────────────────────────────────────────────
+#ROOT WINDOW
 root = tk.Tk()
 root.title("Library System")
-root.geometry("780x520")
+root.geometry("900x600")
 root.resizable(True, True)
 
 notebook = ttk.Notebook(root)
@@ -29,7 +29,7 @@ notebook.add(loans_tab,    text="  Loans  ")
 notebook.add(checkout_tab, text=" Checkout ")
 
 
-# ─── HELPER: build a styled Treeview ────────────────────────────────────────────
+# Build a styled Treeview
 def make_treeview(parent, columns: list[tuple], row: int, columnspan: int = 3) -> ttk.Treeview:
     """
     columns: list of (col_id, heading, width) tuples.
@@ -45,7 +45,7 @@ def make_treeview(parent, columns: list[tuple], row: int, columnspan: int = 3) -
 
     for col_id, heading, width in columns:
         tv.heading(col_id, text=heading)
-        tv.column(col_id, width=width, anchor="w", minwidth=40)
+        tv.column(col_id, width=width, anchor="w", minwidth=width, stretch=True)
 
     vsb = ttk.Scrollbar(frame, orient="vertical", command=tv.yview)
     tv.configure(yscrollcommand=vsb.set)
@@ -55,9 +55,7 @@ def make_treeview(parent, columns: list[tuple], row: int, columnspan: int = 3) -
     return tv
 
 
-# ════════════════════════════════════════════════════════════════════════════════
 #  BOOKS TAB
-# ════════════════════════════════════════════════════════════════════════════════
 
 # Add form
 tk.Label(books_tab, text="Title").grid(row=0, column=0, padx=5, pady=5, sticky="e")
@@ -77,10 +75,10 @@ book_show_inactive = tk.BooleanVar(value=False)
 book_tree = make_treeview(
     books_tab,
     columns=[
-        ("book_id", "Book ID", 70),
-        ("title",   "Title",   240),
-        ("author",  "Author",  190),
-        ("status",  "Status",  100),
+        ("book_id", "Book ID", 65),
+        ("title",   "Title",   260),
+        ("author",  "Author",  200),
+        ("status",  "Status",  110),
     ],
     row=4,
     columnspan=3,
@@ -197,9 +195,7 @@ ttk.Checkbutton(btn_frame_books, text="Show Inactive",
                 variable=book_show_inactive, command=lambda: load_books_from_db(book_search_var.get())).pack(side="left", padx=10)
 
 
-# ════════════════════════════════════════════════════════════════════════════════
 #  MEMBERS TAB
-# ════════════════════════════════════════════════════════════════════════════════
 
 # Add form
 tk.Label(members_tab, text="Name").grid(row=0, column=0, padx=5, pady=5, sticky="e")
@@ -216,10 +212,10 @@ member_show_inactive = tk.BooleanVar(value=False)
 member_tree = make_treeview(
     members_tab,
     columns=[
-        ("member_id",  "Member ID", 80),
-        ("first_name", "First",     120),
-        ("last_name",  "Last",      120),
-        ("fines_due",  "Fines Due", 85),
+        ("member_id",  "Member ID", 75),
+        ("first_name", "First",     140),
+        ("last_name",  "Last",      140),
+        ("fines_due",  "Fines Due", 90),
         ("status",     "Status",    80),
     ],
     row=3,
@@ -347,15 +343,13 @@ ttk.Checkbutton(btn_frame_members, text="Show Inactive",
                 variable=member_show_inactive, command=lambda: load_members_from_db(member_search_var.get())).pack(side="left", padx=10)
 
 
-# ════════════════════════════════════════════════════════════════════════════════
 #  LOANS TAB
-# ════════════════════════════════════════════════════════════════════════════════
 
 loans_tab.grid_columnconfigure(0, weight=1)
 loans_tab.grid_columnconfigure(1, weight=2)
 loans_tab.grid_rowconfigure(0, weight=1)
 
-# ── Left panel: members with open loans ──────────────────────────────────────
+#Left panel: members with open loans
 ln_left = ttk.LabelFrame(loans_tab, text=" Members with Open Loans ")
 ln_left.grid(row=0, column=0, sticky="nsew", padx=(8, 4), pady=8)
 ln_left.grid_rowconfigure(1, weight=1)
@@ -382,17 +376,17 @@ ln_member_tree.heading("member_id", text="ID")
 ln_member_tree.heading("name",      text="Name")
 ln_member_tree.heading("loans",     text="Out")
 ln_member_tree.heading("fines",     text="Fines")
-ln_member_tree.column("member_id", width=40,  anchor="center", minwidth=30)
-ln_member_tree.column("name",      width=150, anchor="w",      minwidth=60)
-ln_member_tree.column("loans",     width=35,  anchor="center", minwidth=30)
-ln_member_tree.column("fines",     width=65,  anchor="e",      minwidth=40)
+ln_member_tree.column("member_id", width=45,  anchor="center", minwidth=45,  stretch=False)
+ln_member_tree.column("name",      width=160, anchor="w",      minwidth=100, stretch=True)
+ln_member_tree.column("loans",     width=40,  anchor="center", minwidth=40,  stretch=False)
+ln_member_tree.column("fines",     width=75,  anchor="e",      minwidth=75,  stretch=False)
 
 ln_member_vsb = ttk.Scrollbar(ln_member_frame, orient="vertical", command=ln_member_tree.yview)
 ln_member_tree.configure(yscrollcommand=ln_member_vsb.set)
 ln_member_tree.grid(row=0, column=0, sticky="nsew")
 ln_member_vsb.grid(row=0, column=1, sticky="ns")
 
-# ── Right panel: books checked out by selected member ────────────────────────
+#Right panel: books checked out by selected member
 ln_right = ttk.LabelFrame(loans_tab, text=" Checked-Out Books ")
 ln_right.grid(row=0, column=1, sticky="nsew", padx=(4, 8), pady=8)
 ln_right.grid_rowconfigure(1, weight=1)
@@ -420,32 +414,34 @@ ln_book_tree.heading("title",    text="Title")
 ln_book_tree.heading("author",   text="Author")
 ln_book_tree.heading("due_date", text="Due Date")
 ln_book_tree.heading("status",   text="Status")
-ln_book_tree.column("loan_id",  width=45,  anchor="center", minwidth=35)
-ln_book_tree.column("title",    width=200, anchor="w",      minwidth=80)
-ln_book_tree.column("author",   width=140, anchor="w",      minwidth=60)
-ln_book_tree.column("due_date", width=90,  anchor="center", minwidth=70)
-ln_book_tree.column("status",   width=100, anchor="w",      minwidth=60)
+ln_book_tree.column("loan_id",  width=50,  anchor="center", minwidth=50,  stretch=False)
+ln_book_tree.column("title",    width=210, anchor="w",      minwidth=100, stretch=True)
+ln_book_tree.column("author",   width=150, anchor="w",      minwidth=80,  stretch=True)
+ln_book_tree.column("due_date", width=95,  anchor="center", minwidth=95,  stretch=False)
+ln_book_tree.column("status",   width=105, anchor="w",      minwidth=105, stretch=False)
 
 ln_book_vsb = ttk.Scrollbar(ln_book_frame, orient="vertical", command=ln_book_tree.yview)
 ln_book_tree.configure(yscrollcommand=ln_book_vsb.set)
 ln_book_tree.grid(row=0, column=0, sticky="nsew")
 ln_book_vsb.grid(row=0, column=1, sticky="ns")
 
-# ── Bottom bar ────────────────────────────────────────────────────────────────
+#Bottom bar
 ln_bottom = ttk.Frame(loans_tab)
 ln_bottom.grid(row=1, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
-ln_bottom.grid_columnconfigure(1, weight=1)
+ln_bottom.grid_columnconfigure(2, weight=1)
 
 ttk.Button(ln_bottom, text="↩  Return Loan", command=lambda: return_loan_cmd()).grid(
     row=0, column=0, padx=(0, 10))
+ttk.Button(ln_bottom, text="📋  Overdue Report", command=lambda: open_overdue_report()).grid(
+    row=0, column=1, padx=(0, 10))
 
 ln_status_var = tk.StringVar(value="Select a member to see their checked-out books.")
 ttk.Label(ln_bottom, textvariable=ln_status_var,
           foreground="#555555", anchor="w", wraplength=460).grid(
-    row=0, column=1, sticky="ew")
+    row=0, column=2, sticky="ew")
 
 
-# ── Data loaders ─────────────────────────────────────────────────────────────
+#Data loaders
 def _ln_load_members(filter_text=""):
     ln_member_tree.delete(*ln_member_tree.get_children())
     conn = get_connection()
@@ -467,7 +463,6 @@ def _ln_load_members(filter_text=""):
         GROUP BY m.member_id
         ORDER BY full_name;
     """, (exact_id, like, like))
-    today = date.today()
     for member_id, full_name, open_loans, fines in cur.fetchall():
         tag = "fines" if fines > 0 else ""
         ln_member_tree.insert("", "end", iid=f"m{member_id}",
@@ -520,7 +515,7 @@ def load_open_loans_from_db():
     _update_ln_status()
 
 
-# ── Live search traces ────────────────────────────────────────────────────────
+#Live search traces
 ln_member_search_var.trace_add("write",
     lambda *_: _ln_load_members(ln_member_search_var.get()))
 
@@ -529,7 +524,7 @@ ln_book_search_var.trace_add("write",
         _get_selected_member_id(), ln_book_search_var.get()))
 
 
-# ── Status bar updates ────────────────────────────────────────────────────────
+#Status bar updates
 def _update_ln_status(*_):
     book_sel   = ln_book_tree.selection()
     member_sel = ln_member_tree.selection()
@@ -552,7 +547,66 @@ ln_member_tree.bind("<<TreeviewSelect>>", lambda e: (
 ln_book_tree.bind("<<TreeviewSelect>>", _update_ln_status)
 
 
-# ── Return loan action ────────────────────────────────────────────────────────
+#Overdue report window
+def open_overdue_report():
+    conn = get_connection()
+    cur  = conn.cursor()
+    cur.execute("""
+        SELECT m.member_id,
+               m.first_name || ' ' || m.last_name AS full_name,
+               m.fines_due,
+               COUNT(l.loan_id) AS open_loans
+        FROM members m
+        LEFT JOIN loans l ON l.member_id = m.member_id AND l.return_date IS NULL
+        WHERE m.fines_due > 0
+        GROUP BY m.member_id
+        ORDER BY m.fines_due DESC;
+    """)
+    rows  = cur.fetchall()
+    total = sum(r[2] for r in rows)
+    conn.close()
+
+    win = tk.Toplevel(root)
+    win.title("Overdue Report")
+    win.geometry("520x400")
+    win.resizable(True, True)
+
+    # Summary header
+    tk.Label(win, text=f"Total Fines Due:  ${total:.2f}",
+             font=("", 12, "bold"), foreground="#b00020").pack(pady=(14, 4))
+    tk.Label(win, text=f"{len(rows)} member(s) with outstanding fines",
+             foreground="#555555").pack(pady=(0, 10))
+
+    # Report table
+    frame = ttk.Frame(win)
+    frame.pack(fill="both", expand=True, padx=12, pady=(0, 4))
+    frame.grid_rowconfigure(0, weight=1)
+    frame.grid_columnconfigure(0, weight=1)
+
+    tree = ttk.Treeview(frame,
+                        columns=("member_id", "name", "fines", "open_loans"),
+                        show="headings", selectmode="none")
+    tree.heading("member_id",  text="ID")
+    tree.heading("name",       text="Member")
+    tree.heading("fines",      text="Fines Due")
+    tree.heading("open_loans", text="Books Out")
+    tree.column("member_id",  width=50,  anchor="center", minwidth=40)
+    tree.column("name",       width=220, anchor="w",      minwidth=100)
+    tree.column("fines",      width=100, anchor="e",      minwidth=70)
+    tree.column("open_loans", width=80,  anchor="center", minwidth=50)
+
+    vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=vsb.set)
+    tree.grid(row=0, column=0, sticky="nsew")
+    vsb.grid(row=0, column=1, sticky="ns")
+
+    for member_id, full_name, fines, open_loans in rows:
+        tree.insert("", "end", values=(member_id, full_name, f"${fines:.2f}", open_loans))
+
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=8)
+
+
+#Return loan action
 def return_loan_cmd():
     book_sel = ln_book_tree.selection()
     if not book_sel:
@@ -612,11 +666,9 @@ def return_loan_cmd():
 
 
 
-# ════════════════════════════════════════════════════════════════════════════════
 #  CHECKOUT TAB
-# ════════════════════════════════════════════════════════════════════════════════
 
-# ── Layout: two panels side by side, status bar at bottom ───────────────────
+#Layout: two panels side by side, status bar at bottom
 checkout_tab.grid_columnconfigure(0, weight=1)
 checkout_tab.grid_columnconfigure(1, weight=1)
 checkout_tab.grid_rowconfigure(1, weight=1)
@@ -646,16 +698,16 @@ co_book_tree = ttk.Treeview(
 co_book_tree.heading("book_id", text="ID")
 co_book_tree.heading("title",   text="Title")
 co_book_tree.heading("author",  text="Author")
-co_book_tree.column("book_id", width=40,  anchor="center", minwidth=30)
-co_book_tree.column("title",   width=180, anchor="w",      minwidth=60)
-co_book_tree.column("author",  width=130, anchor="w",      minwidth=60)
+co_book_tree.column("book_id", width=45,  anchor="center", minwidth=45,  stretch=False)
+co_book_tree.column("title",   width=190, anchor="w",      minwidth=80,  stretch=True)
+co_book_tree.column("author",  width=140, anchor="w",      minwidth=80,  stretch=True)
 
 co_book_vsb = ttk.Scrollbar(co_book_frame, orient="vertical", command=co_book_tree.yview)
 co_book_tree.configure(yscrollcommand=co_book_vsb.set)
 co_book_tree.grid(row=0, column=0, sticky="nsew")
 co_book_vsb.grid(row=0, column=1, sticky="ns")
 
-# Right panel — active members
+#Right panel — active members
 right_panel = ttk.LabelFrame(checkout_tab, text=" Active Members ")
 right_panel.grid(row=0, column=1, rowspan=2, sticky="nsew", padx=(4, 8), pady=8)
 right_panel.grid_rowconfigure(1, weight=1)
@@ -680,9 +732,9 @@ co_member_tree = ttk.Treeview(
 co_member_tree.heading("member_id", text="ID")
 co_member_tree.heading("name",      text="Name")
 co_member_tree.heading("loans",     text="Books Out")
-co_member_tree.column("member_id", width=40,  anchor="center", minwidth=30)
-co_member_tree.column("name",      width=180, anchor="w",      minwidth=60)
-co_member_tree.column("loans",     width=75,  anchor="center", minwidth=40)
+co_member_tree.column("member_id", width=45,  anchor="center", minwidth=45,  stretch=False)
+co_member_tree.column("name",      width=190, anchor="w",      minwidth=100, stretch=True)
+co_member_tree.column("loans",     width=75,  anchor="center", minwidth=75,  stretch=False)
 
 co_member_vsb = ttk.Scrollbar(co_member_frame, orient="vertical", command=co_member_tree.yview)
 co_member_tree.configure(yscrollcommand=co_member_vsb.set)
@@ -703,7 +755,7 @@ co_checkout_btn = ttk.Button(bottom_bar, text="✔  Checkout Book", command=lamb
 co_checkout_btn.grid(row=0, column=1, padx=4)
 
 
-# ── Data loaders ─────────────────────────────────────────────────────────────
+#Data loaders
 def _co_load_books(filter_text=""):
     co_book_tree.delete(*co_book_tree.get_children())
     conn = get_connection()
@@ -734,22 +786,19 @@ def _co_load_members(filter_text=""):
     cur.execute("""
         SELECT m.member_id,
                m.first_name || ' ' || m.last_name AS full_name,
-               COUNT(l.loan_id)                    AS open_loans,
-               m.fines_due
+               COUNT(l.loan_id)                    AS open_loans
         FROM members m
         LEFT JOIN loans l ON l.member_id = m.member_id AND l.return_date IS NULL
-        WHERE m.active = 1
+        WHERE m.active = 1 AND m.fines_due = 0
           AND (m.member_id = ? OR m.first_name LIKE ? OR m.last_name LIKE ?)
         GROUP BY m.member_id
         ORDER BY full_name;
     """, (exact_id, like, like))
-    for member_id, full_name, open_loans, fines in cur.fetchall():
-        tag = "fines" if fines > 0 else ""
+    for member_id, full_name, open_loans in cur.fetchall():
         label = f"{open_loans} / 3"
         co_member_tree.insert("", "end", iid=f"m{member_id}",
-                              values=(member_id, full_name, label), tags=(tag,))
+                              values=(member_id, full_name, label))
     conn.close()
-    co_member_tree.tag_configure("fines", foreground="#b00020")
 
 
 def refresh_checkout_tab():
@@ -784,7 +833,7 @@ co_book_tree.bind("<<TreeviewSelect>>",   _update_co_status)
 co_member_tree.bind("<<TreeviewSelect>>", _update_co_status)
 
 
-# ── Checkout action ───────────────────────────────────────────────────────────
+#Checkout action
 def do_checkout():
     book_sel   = co_book_tree.selection()
     member_sel = co_member_tree.selection()
@@ -822,7 +871,7 @@ def do_checkout():
         messagebox.showerror("Checkout Failed", message)
 
 
-# ─── STARTUP ────────────────────────────────────────────────────────────────────
+#STARTUP
 if __name__ == "__main__":
     initialize_db()
     load_books_from_db()

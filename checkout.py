@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+
 from database import get_connection
 from book import set_book_checkout_status
 from loan import Loan, add_loan
@@ -90,7 +91,7 @@ def checkout_book(book_id: int, member_id: int) -> tuple[bool, str]:
     finally:
         conn.close()
 
-    # Create the loan
+    # Create loan
     checkout_date = date.today()
     due_date      = checkout_date + timedelta(days=LOAN_PERIOD_DAYS)
 
