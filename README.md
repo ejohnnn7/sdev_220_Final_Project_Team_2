@@ -19,8 +19,8 @@ The following rules were agreed upon for this project:
 - **Loan Period:** 14 days
 - **Fine:** $0.25 per day overdue
 - **Maximum Books Per Member:** 3 books
-- **Book IDs:** Stored as strings (Example: B001, B002)
-- **Member IDs:** Stored as strings (Example: M001, M002)
+- **Book IDs:** Stored as autoincrementing integers (Example: 1, 2, 3...)
+- **Member IDs:** Stored as autoincrementing integers (Example: 1, 2, 3...)
 
 ---
 
