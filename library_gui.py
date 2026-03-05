@@ -58,8 +58,8 @@ def make_treeview(parent, columns: list[tuple], row: int, columnspan: int = 3) -
 #  BOOKS TAB
 
 # Add form
-tk.Label(books_tab, text="Title").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-tk.Label(books_tab, text="Author").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+tk.Label(books_tab, text="Add Title").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+tk.Label(books_tab, text="Add Author").grid(row=1, column=0, padx=5, pady=5, sticky="e")
 title_entry  = tk.Entry(books_tab, width=30)
 author_entry = tk.Entry(books_tab, width=30)
 title_entry.grid(row=0, column=1, sticky="w")
@@ -198,7 +198,7 @@ ttk.Checkbutton(btn_frame_books, text="Show Inactive",
 #  MEMBERS TAB
 
 # Add form
-tk.Label(members_tab, text="Name").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+tk.Label(members_tab, text="Add Name").grid(row=0, column=0, padx=5, pady=5, sticky="e")
 member_name_entry = tk.Entry(members_tab, width=30)
 member_name_entry.grid(row=0, column=1, sticky="w")
 
@@ -259,15 +259,26 @@ member_search_var.trace_add("write", lambda *_: load_members_from_db(member_sear
 
 def add_member_cmd():
     name = member_name_entry.get().strip()
+
+    # Check if the box is totally empty
     if not name:
         messagebox.showerror("Error", "Name is required")
         return
-    if not messagebox.askyesno("Confirm", f"Add member '{name}'?"):
-        return
+    
+    # If something is entered into the box we split it
+    parts = name.split()
 
-    parts      = name.split()
+    # Guards to ensure we have a first and last name
+    if len(parts) < 2:
+        messagebox.showerror("Error", "Please enter a first and last name.")
+        return
+    
+    # If we pass the check, we use the parts
     first_name = parts[0]
-    last_name  = " ".join(parts[1:]) if len(parts) > 1 else ""
+    last_name  = " ".join(parts[1:])
+
+    if not messagebox.askyesno("Confirm", f"Add member '{first_name} {last_name}'?"):
+        return
 
     member_obj = Member(first_name=first_name, last_name=last_name, fines_due=0)
     add_member(member_obj)
